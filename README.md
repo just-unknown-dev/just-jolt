@@ -59,7 +59,7 @@ On Windows, MSVC and Dart's directory listing cannot open a path longer than 259
 
 There is no CMake step. `hook/build.dart` compiles everything when an app builds with `build: true`:
 
-1. **`jolt_core`** (static, never bundled): Jolt's 130 unconditional sources, grouped into 6 unity files generated in the build directory from the source list in `src/jolt/Jolt/Jolt.cmake` (`hook/unity.dart`). Optional parts (ObjectStream, GPU compute backends, shader wrappers) are left out.
+1. **`jolt_core`** (static, never bundled): Jolt's 130 unconditional sources, grouped into 6 unity files generated in the build directory from the source list in `src/jolt/Jolt/Jolt.cmake` (`unityFiles` in `hook/build.dart`). Optional parts (ObjectStream, GPU compute backends, shader wrappers) are left out.
 2. **`just_jolt`** (the bundled library, asset id `package:just_jolt/just_jolt`): `src/jj/jj_capi.cpp`, which compiles joltc and our `jj_*` layer in one translation unit.
 
 Both stages use the same `JPH_*` defines; Jolt checks them when it initialises and aborts on a mismatch.
@@ -103,7 +103,7 @@ No axis convention is assumed: a world takes its gravity and a character its up 
 
 1. Replace `src/jolt/Jolt/` (only that folder, plus `src/jolt/LICENSE`) and the three files in `src/joltc/`.
 2. `dart run ffigen --config ffigen.yaml` regenerates `lib/src/native/bindings.g.dart`.
-3. Run the tests (`dart test`). The hook regenerates the unity files from the new `Jolt.cmake`; a source that clashes inside a unity file goes in `isolatedSources` in `hook/unity.dart`.
+3. Run the tests (`dart test`). The hook regenerates the unity files from the new `Jolt.cmake`; a source that clashes inside a unity file goes in `isolatedSources` in `hook/build.dart`.
 
 ## Licences
 

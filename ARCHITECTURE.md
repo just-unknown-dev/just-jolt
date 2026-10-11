@@ -5,7 +5,7 @@ lib/just_jolt.dart        Jolt (conditional: src/jolt_loader_stub.dart on the we
 lib/ffi.dart              native only: Jolt and the bindings
 lib/src/jolt_loader.dart  Jolt: jj_init once, availability, hot-restart clean-up
 lib/src/native/bindings.g.dart   ffigen (ffi-native): jj_* + joltc shapes/body interface
-hook/build.dart, hook/unity.dart two-stage native build, only with `build: true`
+hook/build.dart           two-stage native build, only with `build: true`
 src/jj/jj.h, jj_capi.cpp  our C layer (one TU with joltc.cpp)
 src/jolt/Jolt, src/joltc  vendored Jolt v5.6.0 and joltc 886e088
 ```
