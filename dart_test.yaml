@@ -1,0 +1,3 @@
+# Jolt's worlds and its job system belong to the process, and `dart test`
+# runs test files as isolates of one process: one file at a time.
+concurrency: 1

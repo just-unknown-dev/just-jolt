@@ -1,0 +1,99 @@
+llvm-path:
+  - 'C:\Program Files\LLVM'
+  - 'C:\Program Files (x86)\LLVM'
+
+name: JoltBindings
+description: >
+  Bindings to just_jolt's C layer (src/jj/jj.h) and the part of joltc
+  (src/joltc/joltc.h) that Dart uses directly: shapes and the body interface.
+output: 'lib/src/native/bindings.g.dart'
+
+# Top-level @Native functions resolved through the code asset the build hook
+# bundles (hook/build.dart, assetName 'just_jolt').
+ffi-native:
+  assetId: 'package:just_jolt/just_jolt'
+
+headers:
+  entry-points:
+    - 'src/jj/jj.h'
+  include-directives:
+    - '**/jj.h'
+    - '**/joltc.h'
+
+compiler-opts:
+  - '-Isrc/joltc'
+
+functions:
+  include:
+    - 'jj_.*'
+    - 'JPH_Shape_.*'
+    - 'JPH_ShapeSettings_Destroy'
+    - 'JPH_(Box|Sphere|Capsule|Cylinder|ConvexHull|Mesh|HeightField|RotatedTranslated|Scaled|OffsetCenterOfMass|Empty|StaticCompound)Shape(Settings)?_.*'
+    - 'JPH_CompoundShapeSettings_AddShape2'
+    - 'JPH_BodyInterface_.*'
+    - 'JPH_PhysicsSystem_GetBodyInterface'
+    - 'JPH_PhysicsSystem_GetBodyInterfaceNoLock'
+  exclude:
+    - 'JPH_BodyInterface_.*SoftBody.*'
+  # NativeFinalizer needs these addresses (`addresses.…`).
+  symbol-address:
+    include:
+      - 'jj_world_finalize'
+      - 'jj_shape_release'
+  # Short calls that never call back into Dart. A world step, a character
+  # step, and making or destroying worlds and characters are ordinary calls:
+  # they block while Jolt's threads work.
+  leaf:
+    include:
+      - 'jj_version'
+      - 'jj_has_debug_renderer'
+      - 'jj_live_worlds'
+      - 'jj_world_valid'
+      - 'jj_world_handle_tag'
+      - 'jj_world_joltc'
+      - 'jj_world_set_gravity'
+      - 'jj_world_body_count'
+      - 'jj_body_valid'
+      - 'jj_body_set_layer'
+      - 'jj_get_transforms'
+      - 'jj_get_active_transforms'
+      - 'jj_drain_events'
+      - 'jj_pending_events'
+      - 'jj_raycast'
+      - 'jj_shape_cast'
+      - 'jj_overlap'
+      - 'jj_joint_valid'
+      - 'jj_joint_set_enabled'
+      - 'jj_joint_set_motor'
+      - 'jj_joint_value'
+      - 'jj_character_valid'
+      - 'jj_character_inner_body'
+      - 'jj_character_state'
+      - 'jj_character_set_position'
+      - 'jj_character_contacts'
+      - 'JPH_BodyInterface_(Get|Set|Add|Is|Activate|Deactivate|MoveKinematic|ResetSleepTimer).*'
+
+structs:
+  include:
+    - 'JJ_.*'
+    - 'JPH_Vec3'
+    - 'JPH_Quat'
+    - 'JPH_IndexedTriangle'
+    - 'JPH_AABox'
+
+macros:
+  include:
+    - 'JJ_.*'
+
+globals:
+  exclude:
+    - '.*'
+
+comments:
+  style: any
+  length: full
+
+preamble: |
+  // AUTO-GENERATED — do not edit.
+  // Regenerate with: dart run ffigen --config ffigen.yaml
+  // ignore_for_file: type=lint, camel_case_types, non_constant_identifier_names, unused_field
