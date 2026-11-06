@@ -5,7 +5,7 @@
 ```yaml
 # The app's pubspec.yaml
 dependencies:
-  just_jolt: ^0.1.0
+  just_jolt: ^0.2.0
 
 hooks:
   user_defines:
@@ -89,7 +89,7 @@ hooks:
 
 joltc covers most of Jolt; the layer adds what joltc lacks or what cannot cross into Dart:
 
-- **Worlds** whose collision layers come from a 16 × 16 grid, through Jolt's table filters, with broad-phase layers for static, moving, sensor and character bodies. Each world owns its temporary allocator; one job system serves the whole process. A world picks how contacts mix restitution (`restitutionCombine`: Jolt's rule, min, max or average).
+- **Worlds** whose collision layers come from a 16 × 16 grid, through Jolt's table filters, with broad-phase layers for static, moving, sensor and character bodies; `jj_world_set_collision_grid` changes the grid of a live world. Each world owns its temporary allocator; one job system serves the whole process. A world picks how contacts mix restitution (`restitutionCombine`: Jolt's rule, min, max or average).
 - **Events.** Jolt calls its listeners on worker threads in the middle of a step, so they cannot call into Dart. Contact begin/stay/end, sensor begin/end and body sleep/wake are buffered natively and drained after the step. A body falling asleep keeps its contacts (Jolt drops and refinds them; the layer hides that).
 - **Batch reads**: the moving bodies' poses and velocities in one call, and those that fell asleep since the last read.
 - **Queries** into caller-owned buffers: raycast, shape cast, overlap; closest or all hits; a layer mask and one ignored body.

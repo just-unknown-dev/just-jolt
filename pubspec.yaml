@@ -1,6 +1,6 @@
 name: just_jolt
 description: "Jolt Physics v5.6.0 for Dart: joltc's C API and a C layer for batched reads, events, queries, characters and joints, compiled from source by a native build hook."
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/just-unknown-dev/just-jolt
 repository: https://github.com/just-unknown-dev/just-jolt
 issue_tracker: https://github.com/just-unknown-dev/just-jolt/issues

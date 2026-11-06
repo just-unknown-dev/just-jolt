@@ -347,6 +347,64 @@ void main() {
     );
   });
 
+  test('a new collision grid takes effect on bodies at rest', () {
+    using((arena) {
+      final world = _world(arena);
+      final floorShape = _boxShape(arena, 1);
+      final boxShape = _boxShape(arena, 0.25);
+      final floor = _body(
+        arena,
+        world,
+        floorShape,
+        y: 2, // top at y = 1 (+Y down)
+        motion: JJ_MOTION_STATIC,
+      );
+      jj_body_set_layer(floor, 1);
+      final box = _body(arena, world, boxShape);
+      jj_body_set_layer(box, 2);
+      double yOf(int body) {
+        final ids = arena<Int64>()..value = body;
+        final out = arena<Float>(JJ_TRANSFORM_FLOATS);
+        jj_get_transforms(world, ids, 1, out);
+        return out[1];
+      }
+
+      void steps(int n) {
+        for (var i = 0; i < n; i++) {
+          jj_world_step(world, _dt, 1);
+        }
+      }
+
+      steps(180);
+      expect(yOf(box), closeTo(0.75, 0.05), reason: 'resting on the floor');
+
+      // Layers 1 and 2 no longer collide: the box, asleep or not, falls.
+      final grid = arena<Uint32>(16);
+      for (var i = 0; i < 16; i++) {
+        grid[i] = 0xFFFF;
+      }
+      grid[1] = 0xFFFF & ~(1 << 2);
+      grid[2] = 0xFFFF & ~(1 << 1);
+      jj_world_set_collision_grid(world, grid);
+      steps(60);
+      expect(yOf(box), greaterThan(2), reason: 'through the floor');
+
+      // Back: a new box on layer 2 lands again.
+      grid[1] = 0xFFFF;
+      grid[2] = 0xFFFF;
+      jj_world_set_collision_grid(world, grid);
+      final second = _body(arena, world, boxShape, x: 0.5);
+      jj_body_set_layer(second, 2);
+      steps(120);
+      expect(yOf(second), closeTo(0.75, 0.05));
+
+      jj_world_set_collision_grid(0, grid); // no world: nothing
+      jj_world_set_collision_grid(world, nullptr); // no grid: nothing
+      jj_shape_release(floorShape.cast());
+      jj_shape_release(boxShape.cast());
+    });
+  });
+
   test('debug lines are there only in the dev flavour', () {
     using((arena) {
       final world = _world(arena);

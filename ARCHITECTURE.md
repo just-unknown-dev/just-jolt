@@ -43,7 +43,7 @@ Object layer = kind × 16 + layer, 64 in all; kinds are static, moving (dynamic 
 | sensor | ✓ | ✓ | – | ✓ |
 | character | – | ✓ | ✓ | – |
 
-Built once per world into Jolt's `ObjectLayerPairFilterTable`, `BroadPhaseLayerInterfaceTable` and `ObjectVsBroadPhaseLayerFilterTable`. Queries filter by a layer mask and two flags (sensors, characters). A character's own sweeps see static and moving bodies on its grid row; character-versus-character collision (`CharacterVsCharacterCollisionSimple`) is limited to characters whose layers collide.
+Built when the world is made into Jolt's `ObjectLayerPairFilterTable`, `BroadPhaseLayerInterfaceTable` and `ObjectVsBroadPhaseLayerFilterTable`. `jj_world_set_collision_grid` fills the pair table again and makes the object-vs-broad-phase table again in place (the physics system holds it by reference), gives each character its layer's new row, and wakes every body that can move, so pairs at rest are judged by the new grid in the next step. Queries filter by a layer mask and two flags (sensors, characters). A character's own sweeps see static and moving bodies on its grid row; character-versus-character collision (`CharacterVsCharacterCollisionSimple`) is limited to characters whose layers collide.
 
 ## Threads, locks and teardown
 

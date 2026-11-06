@@ -385,6 +385,15 @@ JJ_API void jj_world_set_gravity(int64_t world, const float* gravity);
 /// Rebuilds the broad phase; worth it after adding many static bodies.
 JJ_API void jj_world_optimize(int64_t world);
 
+/// Replaces the world's collision grid: collides is JJ_LAYER_COUNT rows, as
+/// JJ_WorldSettings.collides (bit j of row i: layer i collides with layer
+/// j; a pair collides only when both rows say so; bits past the 16 layers
+/// are ignored). The next step judges every pair by it: every body that
+/// can move is woken, so pairs at rest are looked at again, and characters
+/// take their layer's new row. A grid equal to the current one does
+/// nothing. Not during a step.
+JJ_API void jj_world_set_collision_grid(int64_t world, const uint32_t* collides);
+
 /// How many bodies the world holds, characters' inner bodies included; 0
 /// for a dead world.
 JJ_API int32_t jj_world_body_count(int64_t world);

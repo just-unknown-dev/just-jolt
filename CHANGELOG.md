@@ -1,3 +1,9 @@
+## 0.2.0
+
+### Added
+
+* `jj_world_set_collision_grid(world, collides)`: a world's 16 × 16 layer grid can change after it is made. The pair table and the broad phase's table are rebuilt from the new grid, characters take their layer's new row, and every body that can move is woken, so pairs at rest are judged by the new grid in the next step. A grid equal to the current one does nothing.
+
 ## 0.1.0
 
 * Jolt Physics v5.6.0 for Dart. `Jolt` (in `package:just_jolt/just_jolt.dart`, safe on the web) starts Jolt's job system once and says whether the library is in the build; `package:just_jolt/ffi.dart` adds the bindings.

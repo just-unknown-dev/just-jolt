@@ -1998,6 +1998,19 @@ external void jj_world_set_gravity(int world, ffi.Pointer<ffi.Float> gravity);
 @ffi.Native<ffi.Void Function(ffi.Int64)>()
 external void jj_world_optimize(int world);
 
+/// Replaces the world's collision grid: collides is JJ_LAYER_COUNT rows, as
+/// JJ_WorldSettings.collides (bit j of row i: layer i collides with layer
+/// j; a pair collides only when both rows say so; bits past the 16 layers
+/// are ignored). The next step judges every pair by it: every body that
+/// can move is woken, so pairs at rest are looked at again, and characters
+/// take their layer's new row. A grid equal to the current one does
+/// nothing. Not during a step.
+@ffi.Native<ffi.Void Function(ffi.Int64, ffi.Pointer<ffi.Uint32>)>()
+external void jj_world_set_collision_grid(
+  int world,
+  ffi.Pointer<ffi.Uint32> collides,
+);
+
 /// How many bodies the world holds, characters' inner bodies included; 0
 /// for a dead world.
 @ffi.Native<ffi.Int32 Function(ffi.Int64)>(isLeaf: true)

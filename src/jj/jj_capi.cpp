@@ -45,6 +45,7 @@
 #include <cstdio>
 #include <cstring>
 #include <mutex>
+#include <new>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -848,6 +849,25 @@ void jj_shape_release(void* shape) {
   if (shape != nullptr) reinterpret_cast<Shape*>(shape)->Release();
 }
 
+/// Fills w's pair table from its grid and the kinds: a pair of object
+/// layers collides when both grid rows say so (the grid is symmetric however
+/// it was given) and their kinds touch.
+static void applyGrid(JjWorld* w) {
+  for (uint32 a = 0; a < kObjectLayers; a++) {
+    for (uint32 b = a; b < kObjectLayers; b++) {
+      uint32 la = layerOf(ObjectLayer(a));
+      uint32 lb = layerOf(ObjectLayer(b));
+      bool grid = (w->collides[la] & (1u << lb)) != 0 &&
+                  (w->collides[lb] & (1u << la)) != 0;
+      if (grid && kindsTouch(kindOf(ObjectLayer(a)), kindOf(ObjectLayer(b)))) {
+        w->pairs->EnableCollision(ObjectLayer(a), ObjectLayer(b));
+      } else {
+        w->pairs->DisableCollision(ObjectLayer(a), ObjectLayer(b));
+      }
+    }
+  }
+}
+
 /* ---- Worlds ------------------------------------------------------------- */
 
 int64_t jj_world_create(const JJ_WorldSettings* s) {
@@ -870,23 +890,13 @@ int64_t jj_world_create(const JJ_WorldSettings* s) {
   w->reportActivation = s->reportActivation;
   for (int i = 0; i < JJ_LAYER_COUNT; i++) w->collides[i] = s->collides[i] & 0xFFFF;
 
-  // The grid is symmetric however it was given: a pair collides only when
-  // both rows say so.
   w->pairs = new ObjectLayerPairFilterTable(kObjectLayers);
   w->broadPhase = new BroadPhaseLayerInterfaceTable(kObjectLayers, kKinds);
   for (uint32 a = 0; a < kObjectLayers; a++) {
     w->broadPhase->MapObjectToBroadPhaseLayer(ObjectLayer(a),
                                               BroadPhaseLayer(uint8(kindOf(ObjectLayer(a)))));
-    for (uint32 b = a; b < kObjectLayers; b++) {
-      uint32 la = layerOf(ObjectLayer(a));
-      uint32 lb = layerOf(ObjectLayer(b));
-      bool grid = (w->collides[la] & (1u << lb)) != 0 &&
-                  (w->collides[lb] & (1u << la)) != 0;
-      if (grid && kindsTouch(kindOf(ObjectLayer(a)), kindOf(ObjectLayer(b)))) {
-        w->pairs->EnableCollision(ObjectLayer(a), ObjectLayer(b));
-      }
-    }
   }
+  applyGrid(w);
   w->objectVsBroadPhase = new ObjectVsBroadPhaseLayerFilterTable(
       *w->broadPhase, kKinds, *w->pairs, kObjectLayers);
 
@@ -976,6 +986,44 @@ void jj_world_set_gravity(int64_t world, const float* gravity) {
 void jj_world_optimize(int64_t world) {
   std::lock_guard<std::recursive_mutex> guard(gLock);
   if (JjWorld* w = findWorld(world)) w->system->OptimizeBroadPhase();
+}
+
+void jj_world_set_collision_grid(int64_t world, const uint32_t* collides) {
+  std::lock_guard<std::recursive_mutex> guard(gLock);
+  JjWorld* w = findWorld(world);
+  if (w == nullptr || collides == nullptr) return;
+  bool same = true;
+  for (int i = 0; i < JJ_LAYER_COUNT; i++) {
+    uint32 row = collides[i] & 0xFFFF;
+    same = same && w->collides[i] == row;
+    w->collides[i] = row;
+  }
+  if (same) return;
+  applyGrid(w);
+  // The object-vs-broad-phase table is worked out from the pair table when
+  // it is made, and the physics system holds it by reference: made again
+  // in place.
+  w->objectVsBroadPhase->~ObjectVsBroadPhaseLayerFilterTable();
+  ::new (static_cast<void*>(w->objectVsBroadPhase))
+      ObjectVsBroadPhaseLayerFilterTable(*w->broadPhase, kKinds, *w->pairs,
+                                         kObjectLayers);
+  for (JjCharacter* c : w->characters) {
+    if (c != nullptr) c->row = w->collides[c->layer];
+  }
+  // Pairs at rest are not looked at again until a body of theirs moves:
+  // wake every body that can, so the next step judges them all by the new
+  // grid (ending contacts it forbids, finding ones it allows).
+  BodyIDVector& ids = w->scratchIds;
+  w->system->GetBodies(ids);
+  const BodyLockInterfaceNoLock& locks = w->system->GetBodyLockInterfaceNoLock();
+  size_t moving = 0;
+  for (const BodyID& id : ids) {
+    BodyLockRead lock(locks, id);
+    if (!lock.Succeeded()) continue;
+    const Body& body = lock.GetBody();
+    if (!body.IsStatic() && body.IsInBroadPhase()) ids[moving++] = id;
+  }
+  w->system->GetBodyInterfaceNoLock().ActivateBodies(ids.data(), int(moving));
 }
 
 int32_t jj_world_body_count(int64_t world) {
